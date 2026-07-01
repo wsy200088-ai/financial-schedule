@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FY26 財務決算時程表</title>
+<style>
+  :root{
+    --cream:#fbf1d7; --peach:#fad6b5; --pink:#faadac; --lilac:#fcdfe5;
+    --mint:#daf1ee; --aqua:#b6e3e7;
+    --ink:#4a4540; --ink-soft:#7a736b; --line:#ece6dd; --white:#ffffff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{font-size:115%;}
+  body{
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",Arial,sans-serif;
+    background:#fffdf9; color:var(--ink); line-height:1.4;
+    padding:12px 14px 28px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;}
+  header.top{
+    background:linear-gradient(120deg,var(--mint),var(--lilac));
+    border-radius:14px; padding:11px 18px; margin-bottom:11px;
+    box-shadow:0 3px 10px rgba(150,140,125,.12);
+    display:flex;align-items:center;flex-wrap:wrap;gap:4px 14px;
+  }
+  header.top h1{font-size:1.2rem;letter-spacing:.5px;}
+  header.top .meta{font-size:.74rem;color:var(--ink-soft);}
+  .pills{margin-left:auto;}
+  .pill{display:inline-block;background:var(--white);border-radius:999px;
+    padding:2px 10px;font-size:.68rem;margin-left:6px;color:var(--ink);}
+
+  section.picker{margin-bottom:11px;}
+  .picker h2{font-size:.8rem;margin-bottom:6px;color:var(--ink-soft);font-weight:600;}
+  .cards{display:grid;grid-template-columns:repeat(13,1fr);gap:6px;}
+  .card{
+    background:var(--white);border:1.4px solid var(--line);border-radius:9px;
+    padding:6px 2px 5px;text-align:center;cursor:pointer;transition:.16s;
+    user-select:none;position:relative;
+  }
+  .card .yr{font-size:.58rem;color:var(--ink-soft);line-height:1.2;}
+  .card .mo{font-size:1rem;font-weight:700;line-height:1.25;}
+  .card .qtag{font-size:.54rem;color:#c98b3a;line-height:1.2;min-height:.7em;}
+  .card:hover{border-color:var(--aqua);transform:translateY(-1px);}
+  .card.active{
+    background:linear-gradient(135deg,var(--aqua),var(--mint));
+    border-color:var(--aqua);box-shadow:0 3px 9px rgba(120,180,180,.3);
+  }
+  .card.is-default .yr::before{content:"◆ ";color:#3f9c93;font-size:.5rem;}
+
+  section.detail{background:var(--white);border-radius:14px;padding:13px 18px 16px;
+    box-shadow:0 3px 10px rgba(150,140,125,.12);}
+  .detail .head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:8px;}
+  .detail h2{font-size:1.1rem;}
+  .detail .sub{font-size:.76rem;color:var(--ink-soft);}
+
+  .alert{background:var(--cream);border-left:4px solid var(--peach);
+    border-radius:7px;padding:6px 12px;margin-bottom:9px;font-size:.76rem;line-height:1.45;}
+  .alert b{color:#c25b58;}
+  .alert.none{border-left-color:var(--aqua);}
+
+  table{width:100%;border-collapse:collapse;font-size:.8rem;}
+  thead th{background:var(--cream);color:var(--ink);text-align:left;
+    padding:5px 9px;border-bottom:2px solid var(--peach);white-space:nowrap;}
+  tbody td{padding:4px 9px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tbody tr:hover{background:#fffaf2;}
+  .date{font-weight:700;white-space:nowrap;}
+  .wk{display:inline-block;width:1.45em;height:1.45em;line-height:1.45em;text-align:center;
+    border-radius:5px;font-size:.78rem;background:#f0ece4;color:var(--ink-soft);}
+  .wk.weekend{background:var(--pink);color:#fff;font-weight:700;}
+  .warn{color:#c25b58;font-size:.7rem;margin-left:5px;}
+  .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.7rem;
+    white-space:nowrap;color:var(--ink);}
+  .rule{color:var(--ink-soft);font-size:.72rem;white-space:nowrap;}
+
+  .legend{margin-top:9px;font-size:.7rem;color:var(--ink-soft);
+    display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .legend .tag{font-size:.66rem;}
+  footer.note{margin-top:10px;font-size:.68rem;color:var(--ink-soft);line-height:1.55;}
+  @media print{body{background:#fff;}.card:not(.active){display:none;}
+    .picker{display:none;}section.detail,header.top{box-shadow:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>FY26 財務決算時程表</h1>
+      <div class="meta">各部門決算作業預定時程 ｜ 來源：決算時程_各部.xlsx</div>
+    </div>
+    <div class="pills">
+      <span class="pill" id="todayPill"></span>
+      <span class="pill">年月＝決算年月</span>
+      <span class="pill">◆ 預設月</span>
+    </div>
+  </header>
+
+  <section class="picker">
+    <h2>選擇決算年月</h2>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section class="detail">
+    <div class="head">
+      <h2 id="detailTitle"></h2>
+      <span class="sub" id="detailSub"></span>
+    </div>
+    <div id="alertBox"></div>
+    <table>
+      <thead><tr><th style="width:78px">日期</th><th style="width:46px">星期</th>
+        <th>作業項目</th><th style="width:120px">分類</th><th style="width:140px">時點規則</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="legend" id="legend"></div>
+    <footer class="note">
+      說明：「決算年月」為被結算月份，作業日多落在次月（例 2026/6月 的結算與提出作業集中在 7 月）。
+      星期為紅底者代表週末（六/日）。財務定期會「操作說明」與「報告」FY26 同日，合併呈現。
+    </footer>
+  </section>
+</div>
+
+<script>
+  const MONTHS = [{"label": "2026/3月", "tasks": [{"cat": "收料/認列截止", "name": "收入、出庫認列截止", "rule": "倒數第3工作天", "iso": "2026-03-27", "md": "3/27", "w": "五", "we": false, "sort": "2026-03-27"}, {"cat": "收料/認列截止", "name": "入退款截止", "rule": "月底", "iso": "2026-03-31", "md": "3/31", "w": "二", "we": false, "sort": "2026-03-31"}, {"cat": "結算里程碑", "name": "月次決算", "rule": "第1工作天", "iso": "2026-04-01", "md": "4/1", "w": "三", "we": false, "sort": "2026-04-01"}, {"cat": "結算里程碑", "name": "月結日", "rule": "第4工作天", "iso": "2026-04-08", "md": "4/8", "w": "三", "we": false, "sort": "2026-04-08"}, {"cat": "結算里程碑", "name": "年/季結日", "rule": "第5工作天", "iso": "2026-04-08", "md": "4/8", "w": "三", "we": false, "sort": "2026-04-08"}, {"cat": "跨部提出", "name": "各部提差異", "rule": "月結後第4工作天", "iso": "2026-04-14", "md": "4/14", "w": "二", "we": false, "sort": "2026-04-14"}, {"cat": "交付", "name": "財務提供主檔", "rule": "T+2", "iso": "2026-04-03", "md": "4/3", "w": "五", "we": false, "sort": "2026-04-03"}, {"cat": "交付", "name": "資訊提供CSV（給經營戰略組）", "rule": "T+5", "iso": "2026-04-15", "md": "4/15", "w": "三", "we": false, "sort": "2026-04-15"}, {"cat": "交付", "name": "資訊匯入cube", "rule": "T+6", "iso": "2026-04-16", "md": "4/16", "w": "四", "we": false, "sort": "2026-04-16"}, {"cat": "盤點", "name": "實際盤點日", "rule": "季/年底", "text": "3/30(一)-3/31(二)", "sort": "2026-03-30"}, {"cat": "財務定期會", "name": "定期會說明-PL（損益表）", "rule": "結算後", "iso": "2026-04-09", "md": "4/9", "w": "四", "we": false, "sort": "2026-04-09"}, {"cat": "財務定期會", "name": "定期會說明-BS（資產負債表）", "rule": "", "iso": "2026-04-10", "md": "4/10", "w": "五", "we": false, "sort": "2026-04-10"}, {"cat": "財務定期會", "name": "定期會說明-CF（現金流量表）", "rule": "", "iso": "2026-04-24", "md": "4/24", "w": "五", "we": false, "sort": "2026-04-24"}, {"cat": "財務定期會", "name": "定期會說明-互動式儀表板", "rule": "", "iso": "2026-04-20", "md": "4/20", "w": "一", "we": false, "sort": "2026-04-20"}]}, {"label": "2026/4月", "tasks": [{"cat": "收料/認列截止", "name": "收入、出庫認列截止", "rule": "倒數第3工作天", "iso": "2026-04-28", "md": "4/28", "w": "二", "we": false, "sort": "2026-04-28"}, {"cat": "收料/認列截止", "name": "入退款截止", "rule": "月底", "iso": "2026-04-30", "md": "4/30", "w": "四", "we": false, "sort": "2026-04-30"}, {"cat": "結算里程碑", "name": "月次決算", "rule": "第1工作天", "iso": "2026-05-04", "md": "5/4", "w": "一", "we": false, "sort": "2026-05-04"}, {"cat": "結算里程碑", "name": "月結日", "rule": "第4工作天", "iso": "2026-05-07", "md": "5/7", "w": "四", "we": false, "sort": "2026-05-07"}, {"cat": "跨部提出", "name": "各部提差異", "rule": "月結後第4工作天", "iso": "2026-05-13", "md": "5/13", "w": "三", "we": false, "sort": "2026-05-13"}, {"cat": "交付", "name": "財務提供主檔", "rule": "T+2", "iso": "2026-05-06", "md": "5/6", "w": "三", "we": false, "sort": "2026-05-06"}, {"cat": "交付", "name": "資訊提供CSV（給經營戰略組）", "rule": "T+5", "iso": "2026-05-14", "md": "5/14", "w": "四", "we": false, "sort": "2026-05-14"}, {"cat": "交付", "name": "資訊匯入cube", "rule": "T+6", "iso": "2026-05-15", "md": "5/15", "w": "五", "we": false, "sort": "2026-05-15"}, {"cat": "財務定期會", "name": "定期會說明-PL（損益表）", "rule": "結算後", "iso": "2026-05-08", "md": "5/8", "w": "五", "we": false, "sort": "2026-05-08"}, {"cat": "財務定期會", "name": "定期會說明-BS（資產負債表）", "rule": "", "iso": "2026-05-09", "md": "5/9", "w": "六", "we": true, "sort": "2026-05-09"}, {"cat": "財務定期會", "name": "定期會說明-CF（現金流量表）", "rule": "", "iso": "2026-05-23", "md": "5/23", "w": "六", "we": true, "sort": "2026-05-23"}, {"cat": "財務定期會", "name": "定期會說明-互動式儀表板", "rule": "", "iso": "2026-05-19", "md": "5/19", "w": "二", "we": false, "sort": "2026-05-19"}]}, {"label": "2026/5月", "tasks": [{"cat": "收料/認列截止", "name": "收入、出庫認列截止", "rule": "倒數第3工作天", "iso": "2026-05-27", "md": "5/27", "w": "三", "we": false, "sort": "2026-05-27"}, {"cat": "收料/認列截止", "name": "入退款截止", "rule": "月底", "iso": "2026-05-31", "md": "5/31", "w": "日", "we": true, "sort": "2026-05-31"}, {"cat": "結算里程碑", "name": "月次決算", "rule": "第1工作天", "iso": "2026-06-01", "md": "6/1", "w": "一", "we": false, "sort": "2026-06-01"}, {"cat": "結算里程碑", "name": "月結日", "rule": "第4工作天", "iso": "2026-06-04", "md": "6/4", "w": "四", "we": false, "sort": "2026-06-04"}, {"cat": "跨部提出", "name": "各部提差異", "rule": "月結後第4工作天", "iso": "2026-06-10", "md": "6/10", "w": "三", "we": false, "sort": "2026-06-10"}, {"cat": "交付", "name": "財務提供主檔", "rule": "T+2", "iso": "2026-06-03", "md": "6/3", "w": "三", "we": false, "sort": "2026-06-03"}, {"cat": "交付", "name": "資訊提供CSV（給經營戰略組）", "rule": "T+5", "iso": "2026-06-11", "md": "6/11", "w": "四", "we": false, "sort": "2026-06-11"}, {"cat": "交付", "name": "資訊匯入cube", "rule": "T+6", "iso": "2026-06-12", "md": "6/12", "w": "五", "we": false, "sort": "2026-06-12"}, {"cat": "財務定期會", "name": "定期會說明-PL（損益表）", "rule": "結算後", "iso": "2026-06-05", "md": "6/5", "w": "五", "we": false, "sort": "2026-06-05"}, {"cat": "財務定期會", "name": "定期會說明-BS（資產負債表）", "rule": "", "iso": "2026-06-06", "md": "6/6", "w": "六", "we": true, "sort": "2026-06-06"}, {"cat": "財務定期會", "name": "定期會說明-CF（現金流量表）", "rule": "", "iso": "2026-06-25", "md": "6/25", "w": "四", "we": false, "sort": "2026-06-25"}, {"cat": "財務定期會", "name": "定期會說明-互動式儀表板", "rule": "", "iso": "2026-06-16", "md": "6/16", "w": "二", "we": false, "sort": "2026-06-16"}]}, {"label": "2026/6月", "tasks": [{"cat": "收料/認列截止", "name": "收入、出庫認列截止", "rule": "倒數第3工作天", "iso": "2026-06-27", "md": "6/27", "w": "六", "we": true, "sort": "2026-06-27"}, {"cat": "收料/認列截止", "name": "入退款截止", "rule": "月底", "iso": "2026-06-30", "md": "6/30", "w": "二", "we": false, "sort": "2026-06-30"}, {"cat": "結算里程碑", "name": "月次決算", "rule": "第1工作天", "iso": "2026-07-01", "md": "7/1", "w": "三", "we": false, "sort": "2026-07-01"}, {"cat": "結算里程碑", "name": "月結日", "rule": "第4工作天", "iso": "2026-07-06", "md": "7/6", "w": "一", "we": false, "sort": "2026-07-06"}, {"cat": "結算里程碑", "name": "年/季結日", "rule": "第5工作天", "iso": "2026-07-07", "md": "7/7", "w": "二", "we": false, "sort": "2026-07-07"}, {"cat": "跨部提出", "name": "各部提差異", "rule": "月結後第4工作天", "iso": "2026-07-10", "md": "7/10", "w": "五", "we": false, "sort": "2026-07-10"}, {"cat": "交付", "name": "財務提供主檔", "rule": "T+2", "iso": "2026-07-03", "md": "7/3", "w": "五", "we": false, "sort": "2026-07-03"}, {"cat": "交付", "name": "資訊提供CSV（給經營戰略組）", "rule": "T+5", "iso": "2026-07-13", "md": "7/13", "w": "一", "we": false, "sort": "2026-07-13"}, {"cat": "交付", "name": "資訊匯入cube", "rule": "T+6", "iso": "2026-07-14", "md": "7/14", "w": "二", "we": false, "sort": "2026-07-14"}, {"cat": "財務定期會", "name": "定期會說明-PL（損益表）", "rule": "結算後", "iso": "2026-07-07", "md": "7/7", "w": "二", "we": false, "sort": "2026-07-07"}, {"cat": "財務定期會", "name": "定期會說明-BS（資產負債表）", "rule": "", "iso": "2026-07-08", "md": "7/8", "w": "三", "we": false, "sort": "2026-07-08"}, {"cat": "財務定期會", "name": "定期會說明-CF（現金流量表）", "rule": "", "iso": "2026-07-22", "md": "7/22", "w": "三", "we": false, "sort": "2026-07-22"}, {"cat": "財務定期會", "name": "定期會說明-互動式儀表板", "rule": "", "iso": "2026-07-16", "md": "7/16", "w": "四", "we": false, "sort": "2026-07-16"}]}, {"label": "2026/7月", "tasks": [{"cat": "收料/認列截止", "name": "收入、出庫認列截止", "rule": "倒數第3工作天", "iso": "2026-07-29", "md": "7/29", "w": "三", "we": false, "sort": "2026-07-29"}, {"cat": "收料/認列截止", "name": "入退款截止", "rule": "月底", "iso": "2026-07-31", "md": "7/31", "w": "五", "we": false, "sort": "2026-07-31"}, {"cat": "結算里程碑", "name": "月次決算", "rule": "第1工作天", "iso": "2026-08-03", "md": "8/3", "w": "一", "we": false, "sort": "2026-08-03"}, {"cat": "結算里程碑", "name": "月結日", "rule": "第4工作天", "iso": "2026-08-06", "md": "8/6", "w": "四", "we": false, "sort": "2026-08-06"}, {"cat": "跨部提出", "name": "各部提差異", "rule": "月結後第4工作天", "iso": "2026-08-12", "md": "8/12", "w": "三", "we": false, "sort": "2026-08-12"}, {"cat": "交付", "name": "財務提供主檔", "rule": "T+2", "iso": "2026-08-05", "md": "8/5", "w": "三", "we": false, "sort": "2026-08-05"}, {"cat": "交付", "name": "資訊提供CSV（給經營戰略組）", "rule": "T+5", "iso": "2026-08-13", "md": "8/13", "w": "四", "we": false, "sort": "2026-08-13"}, {"cat": "交付", "name": "資訊匯入cube", "rule": "T+6", "iso": "2026-08-14", "md": "8/14", "w": "五", "we": false, "sort": "2026-08-14"}, {"cat": "財務定期會", "name": "定期會說明-PL（損益表）", "rule": "結算後", "iso": "2026-08-07", "md": "8/7", "w": "五", "we": false, "sort": "2026-08-07"}, {"cat": "財務定期會", "name": "定期會說明-BS（資產負債表）", "rule": "", "iso": "2026-08-10", "md": "8/10", "w": "一", "we": false, "sort": "2026-08-10"}, {"cat": "財務定期會", "name": "定期會說明-CF（現金流量表）", "rule": "", "iso": "2026-08-24", "md": "8/24", "w": "一", "we": false, "sort": "2026-08-24"}, {"cat": "財務定期會", "name": "定期會說明-互動式儀表板", "rule": "", "iso": "2026-08-18", "md": "8/18", "w": "二", "we": false, "sort": "2026-08-18"}]}, {"label": "2026/8月", "tasks": [{"cat": "收料/認列截止", "name": "收入、出庫認列截止", "rule": "倒數第3工作天", "iso": "2026-08-27", "md": "8/27", "w": "四", "we": false, "sort": "2026-08-27"}, {"cat": "收料/認列截止", "name": "入退款截止", "rule": "月底", "iso": "2026-08-31", "md": "8/31", "w": "一", "we": false, "sort": "2026-08-31"}, {"cat": "結算里程碑", "name": "月次決算", "rule": "第1工作天", "iso": "2026-09-01", "md": "9/1", "w": "二", "we": false, "sort": "2026-09-01"}, {"cat": "結算里程碑", "name": "月結日", "rule": "第4工作天", "iso": "2026-09-04", "md": "9/4", "w": "五", "we": false, "sort": "2026-09-04"}, {"cat": "跨部提出", "name": "各部提差異", "rule": "月結後第4工作天", "iso": "2026-09-10", "md": "9/10", "w": "四", "we": false, "sort": "2026-09-10"}, {"cat": "交付", "name": "財務提供主檔", "rule": "T+2", "iso": "2026-09-03", "md": "9/3", "w": "四", "we": false, "sort": "2026-09-03"}, {"cat": "交付", "name": "資訊提供CSV（給經營戰略組）", "rule": "T+5", "iso": "2026-09-11", "md": "9/11", "w": "五", "we": false, "sort": "2026-09-11"}, {"cat": "交付", "name": "資訊匯入cube", "rule": "T+6", "iso": "2026-09-14", "md": "9/14", "w": "一", "we": false, "sort": "2026-09-14"}, {"cat": "財務定期會", "name": "定期會說明-PL（損益表）", "rule": "結算後", "iso": "2026-09-07", "md": "9/7", "w": "一", "we": false, "sort": "2026-09-07"}, {"cat": "財務定期會", "name": "定期會說明-BS（資產負債表）", "rule": "", "iso": "2026-09-08", "md": "9/8", "w": "二", "we": false, "sort": "2026-09-08"}, {"cat": "財務定期會", "name": "定期會說明-CF（現金流量表）", "rule": "", "iso": "2026-09-22", "md": "9/22", "w": "二", "we": false, "sort": "2026-09-22"}, {"cat": "財務定期會", "name": "定期會說明-互動式儀表板", "rule": "", "iso": "2026-09-16", "md": "9/16", "w": "三", "we": false, "sort": "2026-09-16"}]}, {"label": "2026/9月", "tasks": [{"cat": "收料/認列截止", "name": "收入、出庫認列截止", "rule": "倒數第3工作天", "iso": "2026-09-23", "md": "9/23", "w": "三", "we": false, "sort": "2026-09-23"}, {"cat": "收料/認列截止", "name": "入退款截止", "rule": "月底", "iso": "2026-09-30", "md": "9/30", "w": "三", "we": false, "sort": "2026-09-30"}, {"cat": "結算里程碑", "name": "月次決算", "rule": "第1工作天", "iso": "2026-10-01", "md": "10/1", "w": "四", "we": false, "sort": "2026-10-01"}, {"cat": "結算里程碑", "name": "月結日", "rule": "第4工作天", "iso": "2026-10-06", "md": "10/6", "w": "二", "we": false, "sort": "2026-10-06"}, {"cat": "結算里程碑", "name": "年/季結日", "rule": "第5工作天", "iso": "2026-10-07", "md": "10/7", "w": "三", "we": false, "sort": "2026-10-07"}, {"cat": "跨部提出", "name": "各部提差異", "rule": "月結後第4工作天", "iso": "2026-10-13", "md": "10/13", "w": "二", "we": false, "sort": "2026-10-13"}, {"cat": "交付", "name": "財務提供主檔", "rule": "T+2", "iso": "2026-10-05", "md": "10/5", "w": "一", "we": false, "sort": "2026-10-05"}, {"cat": "交付", "name": "資訊提供CSV（給經營戰略組）", "rule": "T+5", "iso": "2026-10-13", "md": "10/13", "w": "二", "we": false, "sort": "2026-10-13"}, {"cat": "交付", "name": "資訊匯入cube", "rule": "T+6", "iso": "2026-10-14", "md": "10/14", "w": "三", "we": false, "sort": "2026-10-14"}, {"cat": "盤點", "name": "實際盤點日", "rule": "季/年底", "text": "9/29(二)-9/30(三)", "sort": "2026-09-29"}, {"cat": "財務定期會", "name": "定期會說明-PL（損益表）", "rule": "結算後", "iso": "2026-10-07", "md": "10/7", "w": "三", "we": false, "sort": "2026-10-07"}, {"cat": "財務定期會", "name": "定期會說明-BS（資產負債表）", "rule": "", "iso": "2026-10-08", "md": "10/8", "w": "四", "we": false, "sort": "2026-10-08"}, {"cat": "財務定期會", "name": "定期會說明-CF（現金流量表）", "rule": "", "iso": "2026-10-22", "md": "10/22", "w": "四", "we": false, "sort": "2026-10-22"}, {"cat": "財務定期會", "name": "定期會說明-互動式儀表板", "rule": "", "iso": "2026-10-19", "md": "10/19", "w": "一", "we": false, "sort": "2026-10-19"}]}, {"label": "2026/10月", "tasks": [{"cat": "收料/認列截止", "name": "收入、出庫認列截止", "rule": "倒數第3工作天", "iso": "2026-10-28", "md": "10/28", "w": "三", "we": false, "sort": "2026-10-28"}, {"cat": "收料/認列截止", "name": "入退款截止", "rule": "月底", "iso": "2026-10-31", "md": "10/31", "w": "六", "we": true, "sort": "2026-10-31"}, {"cat": "結算里程碑", "name": "月次決算", "rule": "第1工作天", "iso": "2026-11-02", "md": "11/2", "w": "一", "we": false, "sort": "2026-11-02"}, {"cat": "結算里程碑", "name": "月結日", "rule": "第4工作天", "iso": "2026-11-05", "md": "11/5", "w": "四", "we": false, "sort": "2026-11-05"}, {"cat": "跨部提出", "name": "各部提差異", "rule": "月結後第4工作天", "iso": "2026-11-11", "md": "11/11", "w": "三", "we": false, "sort": "2026-11-11"}, {"cat": "交付", "name": "財務提供主檔", "rule": "T+2", "iso": "2026-11-04", "md": "11/4", "w": "三", "we": false, "sort": "2026-11-04"}, {"cat": "交付", "name": "資訊提供CSV（給經營戰略組）", "rule": "T+5", "iso": "2026-11-12", "md": "11/12", "w": "四", "we": false, "sort": "2026-11-12"}, {"cat": "交付", "name": "資訊匯入cube", "rule": "T+6", "iso": "2026-11-13", "md": "11/13", "w": "五", "we": false, "sort": "2026-11-13"}, {"cat": "財務定期會", "name": "定期會說明-PL（損益表）", "rule": "結算後", "iso": "2026-11-06", "md": "11/6", "w": "五", "we": false, "sort": "2026-11-06"}, {"cat": "財務定期會", "name": "定期會說明-BS（資產負債表）", "rule": "", "iso": "2026-11-09", "md": "11/9", "w": "一", "we": false, "sort": "2026-11-09"}, {"cat": "財務定期會", "name": "定期會說明-CF（現金流量表）", "rule": "", "iso": "2026-11-23", "md": "11/23", "w": "一", "we": false, "sort": "2026-11-23"}, {"cat": "財務定期會", "name": "定期會說明-互動式儀表板", "rule": "", "iso": "2026-11-17", "md": "11/17", "w": "二", "we": false, "sort": "2026-11-17"}]}, {"label": "2026/11月", "tasks": [{"cat": "收料/認列截止", "name": "收入、出庫認列截止", "rule": "倒數第3工作天", "iso": "2026-11-26", "md": "11/26", "w": "四", "we": false, "sort": "2026-11-26"}, {"cat": "收料/認列截止", "name": "入退款截止", "rule": "月底", "iso": "2026-11-30", "md": "11/30", "w": "一", "we": false, "sort": "2026-11-30"}, {"cat": "結算里程碑", "name": "月次決算", "rule": "第1工作天", "iso": "2026-12-01", "md": "12/1", "w": "二", "we": false, "sort": "2026-12-01"}, {"cat": "結算里程碑", "name": "月結日", "rule": "第4工作天", "iso": "2026-12-04", "md": "12/4", "w": "五", "we": false, "sort": "2026-12-04"}, {"cat": "跨部提出", "name": "各部提差異", "rule": "月結後第4工作天", "iso": "2026-12-10", "md": "12/10", "w": "四", "we": false, "sort": "2026-12-10"}, {"cat": "交付", "name": "財務提供主檔", "rule": "T+2", "iso": "2026-12-03", "md": "12/3", "w": "四", "we": false, "sort": "2026-12-03"}, {"cat": "交付", "name": "資訊提供CSV（給經營戰略組）", "rule": "T+5", "iso": "2026-12-11", "md": "12/11", "w": "五", "we": false, "sort": "2026-12-11"}, {"cat": "交付", "name": "資訊匯入cube", "rule": "T+6", "iso": "2026-12-14", "md": "12/14", "w": "一", "we": false, "sort": "2026-12-14"}, {"cat": "財務定期會", "name": "定期會說明-PL（損益表）", "rule": "結算後", "iso": "2026-12-07", "md": "12/7", "w": "一", "we": false, "sort": "2026-12-07"}, {"cat": "財務定期會", "name": "定期會說明-BS（資產負債表）", "rule": "", "iso": "2026-12-08", "md": "12/8", "w": "二", "we": false, "sort": "2026-12-08"}, {"cat": "財務定期會", "name": "定期會說明-CF（現金流量表）", "rule": "", "iso": "2026-12-22", "md": "12/22", "w": "二", "we": false, "sort": "2026-12-22"}, {"cat": "財務定期會", "name": "定期會說明-互動式儀表板", "rule": "", "iso": "2026-12-16", "md": "12/16", "w": "三", "we": false, "sort": "2026-12-16"}]}, {"label": "2026/12月", "tasks": [{"cat": "收料/認列截止", "name": "收入、出庫認列截止", "rule": "倒數第3工作天", "iso": "2026-12-29", "md": "12/29", "w": "二", "we": false, "sort": "2026-12-29"}, {"cat": "收料/認列截止", "name": "入退款截止", "rule": "月底", "iso": "2026-12-31", "md": "12/31", "w": "四", "we": false, "sort": "2026-12-31"}, {"cat": "結算里程碑", "name": "月次決算", "rule": "第1工作天", "iso": "2027-01-04", "md": "1/4", "w": "一", "we": false, "sort": "2027-01-04"}, {"cat": "結算里程碑", "name": "月結日", "rule": "第4工作天", "iso": "2027-01-07", "md": "1/7", "w": "四", "we": false, "sort": "2027-01-07"}, {"cat": "結算里程碑", "name": "年/季結日", "rule": "第5工作天", "iso": "2027-01-08", "md": "1/8", "w": "五", "we": false, "sort": "2027-01-08"}, {"cat": "跨部提出", "name": "各部提差異", "rule": "月結後第4工作天", "iso": "2027-01-13", "md": "1/13", "w": "三", "we": false, "sort": "2027-01-13"}, {"cat": "交付", "name": "財務提供主檔", "rule": "T+2", "iso": "2027-01-06", "md": "1/6", "w": "三", "we": false, "sort": "2027-01-06"}, {"cat": "交付", "name": "資訊提供CSV（給經營戰略組）", "rule": "T+5", "iso": "2027-01-14", "md": "1/14", "w": "四", "we": false, "sort": "2027-01-14"}, {"cat": "交付", "name": "資訊匯入cube", "rule": "T+6", "iso": "2027-01-15", "md": "1/15", "w": "五", "we": false, "sort": "2027-01-15"}, {"cat": "財務定期會", "name": "定期會說明-PL（損益表）", "rule": "結算後", "iso": "2027-01-08", "md": "1/8", "w": "五", "we": false, "sort": "2027-01-08"}, {"cat": "財務定期會", "name": "定期會說明-BS（資產負債表）", "rule": "", "iso": "2027-01-11", "md": "1/11", "w": "一", "we": false, "sort": "2027-01-11"}, {"cat": "財務定期會", "name": "定期會說明-CF（現金流量表）", "rule": "", "iso": "2027-01-25", "md": "1/25", "w": "一", "we": false, "sort": "2027-01-25"}, {"cat": "財務定期會", "name": "定期會說明-互動式儀表板", "rule": "", "iso": "2027-01-19", "md": "1/19", "w": "二", "we": false, "sort": "2027-01-19"}]}, {"label": "2027/1月", "tasks": [{"cat": "收料/認列截止", "name": "收入、出庫認列截止", "rule": "倒數第3工作天", "iso": "2027-01-27", "md": "1/27", "w": "三", "we": false, "sort": "2027-01-27"}, {"cat": "收料/認列截止", "name": "入退款截止", "rule": "月底", "iso": "2027-01-31", "md": "1/31", "w": "日", "we": true, "sort": "2027-01-31"}, {"cat": "結算里程碑", "name": "月次決算", "rule": "第1工作天", "iso": "2027-02-01", "md": "2/1", "w": "一", "we": false, "sort": "2027-02-01"}, {"cat": "結算里程碑", "name": "月結日", "rule": "第4工作天", "iso": "2027-02-03", "md": "2/3", "w": "三", "we": false, "sort": "2027-02-03"}, {"cat": "跨部提出", "name": "各部提差異", "rule": "月結後第4工作天", "iso": "2027-02-09", "md": "2/9", "w": "二", "we": false, "sort": "2027-02-09"}, {"cat": "交付", "name": "財務提供主檔", "rule": "T+2", "iso": "2027-02-03", "md": "2/3", "w": "三", "we": false, "sort": "2027-02-03"}, {"cat": "交付", "name": "資訊提供CSV（給經營戰略組）", "rule": "T+5", "iso": "2027-02-10", "md": "2/10", "w": "三", "we": false, "sort": "2027-02-10"}, {"cat": "交付", "name": "資訊匯入cube", "rule": "T+6", "iso": "2027-02-11", "md": "2/11", "w": "四", "we": false, "sort": "2027-02-11"}, {"cat": "財務定期會", "name": "定期會說明-PL（損益表）", "rule": "結算後", "iso": "2027-02-04", "md": "2/4", "w": "四", "we": false, "sort": "2027-02-04"}, {"cat": "財務定期會", "name": "定期會說明-BS（資產負債表）", "rule": "", "iso": "2027-02-05", "md": "2/5", "w": "五", "we": false, "sort": "2027-02-05"}, {"cat": "財務定期會", "name": "定期會說明-CF（現金流量表）", "rule": "", "iso": "2027-02-19", "md": "2/19", "w": "五", "we": false, "sort": "2027-02-19"}, {"cat": "財務定期會", "name": "定期會說明-互動式儀表板", "rule": "", "iso": "2027-02-15", "md": "2/15", "w": "一", "we": false, "sort": "2027-02-15"}]}, {"label": "2027/2月", "tasks": [{"cat": "收料/認列截止", "name": "收入、出庫認列截止", "rule": "倒數第3工作天", "iso": "2027-02-24", "md": "2/24", "w": "三", "we": false, "sort": "2027-02-24"}, {"cat": "收料/認列截止", "name": "入退款截止", "rule": "月底", "iso": "2027-02-28", "md": "2/28", "w": "日", "we": true, "sort": "2027-02-28"}, {"cat": "結算里程碑", "name": "月次決算", "rule": "第1工作天", "iso": "2027-03-02", "md": "3/2", "w": "二", "we": false, "sort": "2027-03-02"}, {"cat": "結算里程碑", "name": "月結日", "rule": "第4工作天", "iso": "2027-03-05", "md": "3/5", "w": "五", "we": false, "sort": "2027-03-05"}, {"cat": "跨部提出", "name": "各部提差異", "rule": "月結後第4工作天", "iso": "2027-03-11", "md": "3/11", "w": "四", "we": false, "sort": "2027-03-11"}, {"cat": "交付", "name": "財務提供主檔", "rule": "T+2", "iso": "2027-03-04", "md": "3/4", "w": "四", "we": false, "sort": "2027-03-04"}, {"cat": "交付", "name": "資訊提供CSV（給經營戰略組）", "rule": "T+5", "iso": "2027-03-12", "md": "3/12", "w": "五", "we": false, "sort": "2027-03-12"}, {"cat": "交付", "name": "資訊匯入cube", "rule": "T+6", "iso": "2027-03-15", "md": "3/15", "w": "一", "we": false, "sort": "2027-03-15"}, {"cat": "盤點", "name": "實際盤點日", "rule": "季/年底", "text": "2/4(四)-2/10(三)", "sort": "2028-02-04"}, {"cat": "財務定期會", "name": "定期會說明-PL（損益表）", "rule": "結算後", "iso": "2027-03-08", "md": "3/8", "w": "一", "we": false, "sort": "2027-03-08"}, {"cat": "財務定期會", "name": "定期會說明-BS（資產負債表）", "rule": "", "iso": "2027-03-09", "md": "3/9", "w": "二", "we": false, "sort": "2027-03-09"}, {"cat": "財務定期會", "name": "定期會說明-CF（現金流量表）", "rule": "", "iso": "2027-03-23", "md": "3/23", "w": "二", "we": false, "sort": "2027-03-23"}, {"cat": "財務定期會", "name": "定期會說明-互動式儀表板", "rule": "", "iso": "2027-03-17", "md": "3/17", "w": "三", "we": false, "sort": "2027-03-17"}]}, {"label": "2027/3月", "tasks": [{"cat": "收料/認列截止", "name": "收入、出庫認列截止", "rule": "倒數第3工作天", "iso": "2027-03-27", "md": "3/27", "w": "六", "we": true, "sort": "2027-03-27"}, {"cat": "收料/認列截止", "name": "入退款截止", "rule": "月底", "iso": "2027-03-31", "md": "3/31", "w": "三", "we": false, "sort": "2027-03-31"}, {"cat": "結算里程碑", "name": "月次決算", "rule": "第1工作天", "iso": "2027-04-01", "md": "4/1", "w": "四", "we": false, "sort": "2027-04-01"}, {"cat": "結算里程碑", "name": "月結日", "rule": "第4工作天", "iso": "2027-04-08", "md": "4/8", "w": "四", "we": false, "sort": "2027-04-08"}, {"cat": "結算里程碑", "name": "年/季結日", "rule": "第5工作天", "iso": "2027-04-08", "md": "4/8", "w": "四", "we": false, "sort": "2027-04-08"}, {"cat": "跨部提出", "name": "各部提差異", "rule": "月結後第4工作天", "iso": "2027-04-14", "md": "4/14", "w": "三", "we": false, "sort": "2027-04-14"}, {"cat": "交付", "name": "財務提供主檔", "rule": "T+2", "iso": "2027-04-05", "md": "4/5", "w": "一", "we": false, "sort": "2027-04-05"}, {"cat": "交付", "name": "資訊提供CSV（給經營戰略組）", "rule": "T+5", "iso": "2027-04-15", "md": "4/15", "w": "四", "we": false, "sort": "2027-04-15"}, {"cat": "交付", "name": "資訊匯入cube", "rule": "T+6", "iso": "2027-04-16", "md": "4/16", "w": "五", "we": false, "sort": "2027-04-16"}, {"cat": "盤點", "name": "實際盤點日", "rule": "季/年底", "text": "3/30(二)-3/31(三)", "sort": "2027-03-30"}, {"cat": "財務定期會", "name": "定期會說明-PL（損益表）", "rule": "結算後", "iso": "2027-04-09", "md": "4/9", "w": "五", "we": false, "sort": "2027-04-09"}, {"cat": "財務定期會", "name": "定期會說明-BS（資產負債表）", "rule": "", "iso": "2027-04-12", "md": "4/12", "w": "一", "we": false, "sort": "2027-04-12"}, {"cat": "財務定期會", "name": "定期會說明-CF（現金流量表）", "rule": "", "iso": "2027-04-26", "md": "4/26", "w": "一", "we": false, "sort": "2027-04-26"}, {"cat": "財務定期會", "name": "定期會說明-互動式儀表板", "rule": "", "iso": "2027-04-20", "md": "4/20", "w": "二", "we": false, "sort": "2027-04-20"}]}];
+  const CAT_COLOR = {
+    "收料/認列截止":"var(--peach)",
+    "結算里程碑":"var(--aqua)",
+    "跨部提出":"var(--pink)",
+    "交付":"var(--mint)",
+    "盤點":"var(--lilac)",
+    "財務定期會":"var(--cream)"
+  };
+  const QUARTER_LABELS = new Set(["2026/3月","2026/6月","2026/9月","2026/12月","2027/3月"]);
+
+  function computeDefaultLabel(){
+    const t = new Date();
+    let y = t.getFullYear(), m = t.getMonth()+1;
+    m -= 1; if(m===0){m=12;y-=1;}
+    const target = y+"/"+m+"月";
+    if(MONTHS.some(o=>o.label===target)) return target;
+    return MONTHS[0].label;
+  }
+
+  let currentLabel = null;
+
+  function renderCards(){
+    const box = document.getElementById("cards");
+    const def = computeDefaultLabel();
+    box.innerHTML = "";
+    MONTHS.forEach(o=>{
+      const parts = o.label.split("/");
+      const div = document.createElement("div");
+      div.className = "card" + (o.label===currentLabel?" active":"") + (o.label===def?" is-default":"");
+      div.dataset.label = o.label;
+      div.innerHTML = '<div class="yr">'+parts[0]+'</div><div class="mo">'+parts[1]+'</div>'+
+        '<div class="qtag">'+(QUARTER_LABELS.has(o.label)?"季/年結":"")+'</div>';
+      div.addEventListener("click",()=>{currentLabel=o.label;renderCards();renderDetail();});
+      box.appendChild(div);
+    });
+  }
+
+  function renderDetail(){
+    const mo = MONTHS.find(o=>o.label===currentLabel);
+    if(!mo) return;
+    document.getElementById("detailTitle").textContent = mo.label + " 決算時程";
+    document.getElementById("detailSub").textContent =
+      "共 "+mo.tasks.length+" 項作業" + (QUARTER_LABELS.has(mo.label)?"（季結/年結月，含盤點）":"");
+
+    const tasks = mo.tasks.slice().sort((a,b)=> (a.sort<b.sort?-1:a.sort>b.sort?1:0));
+
+    const weekendDeadlines = tasks.filter(t=>t.we);
+    const ab = document.getElementById("alertBox");
+    if(weekendDeadlines.length){
+      ab.className="alert";
+      ab.innerHTML = "<b>⚠ 本月有 "+weekendDeadlines.length+" 項日期落在週末：</b> " +
+        weekendDeadlines.map(t=>t.name+"（"+t.md+" "+t.w+"）").join("、") + "，建議確認是否需提前。";
+    } else {
+      ab.className="alert none";
+      ab.innerHTML = "本月各項日期皆為平日，無週末截止情形。";
+    }
+
+    const tb = document.getElementById("tbody");
+    tb.innerHTML = "";
+    tasks.forEach(t=>{
+      const tr = document.createElement("tr");
+      let dateCell, wkCell;
+      if(t.iso){
+        dateCell = '<span class="date">'+t.md+'</span>';
+        wkCell = '<span class="wk'+(t.we?' weekend':'')+'">'+t.w+'</span>'+(t.we?'<span class="warn">假日</span>':'');
+      } else {
+        dateCell = '<span class="date">'+t.text+'</span>';
+        wkCell = '<span class="wk">—</span>';
+      }
+      tr.innerHTML = '<td>'+dateCell+'</td><td>'+wkCell+'</td>'+
+        '<td>'+t.name+'</td>'+
+        '<td><span class="tag" style="background:'+CAT_COLOR[t.cat]+'">'+t.cat+'</span></td>'+
+        '<td class="rule">'+(t.rule||'—')+'</td>';
+      tb.appendChild(tr);
+    });
+
+    renderLegend();
+  }
+
+  function renderLegend(){
+    const lg = document.getElementById("legend");
+    lg.innerHTML = "<span>分類：</span>" +
+      Object.keys(CAT_COLOR).map(k=>'<span class="tag" style="background:'+CAT_COLOR[k]+'">'+k+'</span>').join("");
+  }
+
+  document.addEventListener("DOMContentLoaded",()=>{
+    const now = new Date();
+    document.getElementById("todayPill").textContent =
+      "今日 "+now.getFullYear()+"/"+(now.getMonth()+1)+"/"+now.getDate();
+    currentLabel = computeDefaultLabel();
+    renderCards();
+    renderDetail();
+  });
+</script>
+</body>
+</html>
