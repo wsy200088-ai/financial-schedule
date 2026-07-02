@@ -32,6 +32,13 @@
   .pills{margin-left:auto;}
   .pill{display:inline-block;background:var(--white);border-radius:999px;
     padding:2px 10px;font-size:.68rem;margin-left:6px;color:var(--ink);}
+  .langsw{margin-left:10px;display:flex;gap:5px;}
+  .langbtn{cursor:pointer;background:var(--white);border:1.4px solid var(--line);
+    border-radius:999px;padding:3px 13px;font-size:.72rem;color:var(--ink-soft);
+    user-select:none;transition:.15s;font-weight:600;}
+  .langbtn:hover{border-color:var(--aqua);}
+  .langbtn.active{background:linear-gradient(135deg,var(--aqua),var(--mint));
+    border-color:var(--aqua);color:var(--ink);}
 
   section.picker{margin-bottom:11px;}
   .picker h2{font-size:.8rem;margin-bottom:6px;color:var(--ink-soft);font-weight:600;}
@@ -88,18 +95,22 @@
 <div class="wrap">
   <header class="top">
     <div>
-      <h1>FY26 財務決算時程表</h1>
-      <div class="meta">各部門決算作業預定時程 ｜ 來源：決算時程_各部.xlsx</div>
+      <h1 id="h1title">FY26 財務決算時程表</h1>
+      <div class="meta" id="metaLine">各部門決算作業預定時程 ｜ 來源：決算時程_各部.xlsx</div>
     </div>
     <div class="pills">
       <span class="pill" id="todayPill"></span>
-      <span class="pill">年月＝決算年月</span>
-      <span class="pill">◆ 預設月</span>
+      <span class="pill" id="pillYm">年月＝決算年月</span>
+      <span class="pill" id="pillDefault">◆ 預設月</span>
+    </div>
+    <div class="langsw" id="langsw">
+      <span class="langbtn" data-lang="ja">日文</span>
+      <span class="langbtn" data-lang="zh">中文</span>
     </div>
   </header>
 
   <section class="picker">
-    <h2>選擇決算年月</h2>
+    <h2 id="pickerH2">選擇決算年月</h2>
     <div class="cards" id="cards"></div>
   </section>
 
@@ -115,7 +126,7 @@
       <tbody id="tbody"></tbody>
     </table>
     <div class="legend" id="legend"></div>
-    <footer class="note">
+    <footer class="note" id="footerNote">
       說明：「決算年月」為被結算月份，作業日多落在次月（例 2026/6月 的結算與提出作業集中在 7 月）。
       星期為紅底者代表週末（六/日）。財務定期會「操作說明」與「報告」FY26 同日，合併呈現。
     </footer>
@@ -134,6 +145,100 @@
     "日幣處理":"var(--sky)"
   };
   const QUARTER_LABELS = new Set(["2026/3月","2026/6月","2026/9月","2026/12月","2027/3月"]);
+
+  // ===== 語言（繁中／日文）對照表 =====
+  let LANG = "zh";
+  const I18N = {
+    zh:{
+      title:"FY26 財務決算時程表",
+      meta:"各部門決算作業預定時程 ｜ 來源：決算時程_各部.xlsx",
+      pillYm:"年月＝決算年月",
+      pillDefault:"◆ 預設月",
+      today:"今日",
+      pickerH2:"選擇決算年月",
+      th:["日期","星期","作業項目","分類","時點規則"],
+      footer:"說明：「決算年月」為被結算月份，作業日多落在次月（例 2026/6月 的結算與提出作業集中在 7 月）。星期為紅底者代表週末（六/日）。財務定期會「操作說明」與「報告」FY26 同日，合併呈現。",
+      qtag:"季/年結",
+      detailSuffix:" 決算時程",
+      subCount:c=>"共 "+c+" 項作業",
+      subQuarter:"（季結/年結月，含盤點）",
+      legendLabel:"分類：",
+      holiday:"假日",
+      dash:"—",
+      alertNone:"本月各項日期皆為平日，無週末截止情形。",
+      alertWeekend:(n,list)=>"<b>⚠ 本月有 "+n+" 項日期落在週末：</b> "+list+"，建議確認是否需提前。",
+      alertJoin:"、"
+    },
+    ja:{
+      title:"FY26 財務決算スケジュール表",
+      meta:"各部門決算作業予定スケジュール ｜ 出典：決算スケジュール_各部.xlsx",
+      pillYm:"年月＝決算対象年月",
+      pillDefault:"◆ 既定月",
+      today:"本日",
+      pickerH2:"決算年月を選択",
+      th:["日付","曜日","作業項目","分類","タイミング規則"],
+      footer:"説明：「決算年月」は締め対象の月を指し、作業日は翌月に集中します（例：2026/6月の決算・提出作業は7月に集中）。曜日が赤背景は週末（土/日）を表します。財務定例会「操作説明」と「報告」はFY26では同日のため、統合して表示しています。",
+      qtag:"四半期/年次",
+      detailSuffix:" 決算スケジュール",
+      subCount:c=>c+" 件の作業",
+      subQuarter:"（四半期/年次締め月、棚卸含む）",
+      legendLabel:"分類：",
+      holiday:"祝休日",
+      dash:"—",
+      alertNone:"今月の各日付はすべて平日で、週末締めはありません。",
+      alertWeekend:(n,list)=>"<b>⚠ 今月は "+n+" 件の日付が週末です：</b> "+list+"、事前のご確認をお勧めします。",
+      alertJoin:"、"
+    }
+  };
+  const WK_JA = {"一":"月","二":"火","三":"水","四":"木","五":"金","六":"土","日":"日"};
+  const T_CAT = {
+    "收料/認列截止":"収料/計上締切",
+    "結算里程碑":"決算マイルストーン",
+    "跨部提出":"部門間提出",
+    "交付":"提供/受渡",
+    "盤點":"棚卸",
+    "財務定期會":"財務定例会",
+    "日幣處理":"日本円処理"
+  };
+  const T_NAME = {
+    "收入、出庫認列截止":"収入・出庫計上締切",
+    "入退款截止":"入出金締切",
+    "月次決算":"月次決算",
+    "月結日":"月次締め日",
+    "年/季結日":"年次/四半期締め日",
+    "各部提差異（給財務）":"各部門差異提出（財務宛）",
+    "財務提供主檔（給資訊）":"財務マスタ提供（情報システム宛）",
+    "資訊提供CSV（給經營戰略組）":"情報システムCSV提供（経営戦略G宛）",
+    "資訊匯入cube":"情報システムcube取込",
+    "實際盤點日":"実地棚卸日",
+    "定期會說明-PL（損益表）":"定例会説明-PL（損益計算書）",
+    "定期會說明-BS（資產負債表）":"定例会説明-BS（貸借対照表）",
+    "定期會說明-CF（現金流量表）":"定例会説明-CF（キャッシュフロー計算書）",
+    "定期會說明-互動式儀表板":"定例会説明-インタラクティブダッシュボード",
+    "日幣B處理":"日本円B処理",
+    "日幣C處理":"日本円C処理"
+  };
+  const T_RULE = {
+    "倒數第3工作天 (盤點月/倒數第4工作天)":"末尾3営業日前（棚卸月/末尾4営業日前）",
+    "月底":"月末",
+    "第1工作天":"第1営業日",
+    "第4工作天":"第4営業日",
+    "第5工作天":"第5営業日",
+    "月結後第4工作天":"月次締め後第4営業日",
+    "月結+2":"月次締め+2",
+    "月結+5":"月次締め+5",
+    "T+6":"T+6",
+    "9月、3月":"9月・3月",
+    "月結+2工作天":"月次締め+2営業日",
+    "月結+4工作天（季/年結）":"月次締め+4営業日（四半期/年次）",
+    "":""
+  };
+  const L = ()=>I18N[LANG];
+  function trCat(v){ return LANG==="ja" ? (T_CAT[v]||v) : v; }
+  function trName(v){ return LANG==="ja" ? (T_NAME[v]||v) : v; }
+  function trRule(v){ return LANG==="ja" ? (v in T_RULE ? T_RULE[v] : v) : v; }
+  function trWk(w){ return LANG==="ja" ? (WK_JA[w]||w) : w; }
+  function trText(s){ return LANG==="ja" ? s.replace(/[一二三四五六日]/g,c=>WK_JA[c]||c) : s; }
 
   function computeDefaultLabel(){
     const t = new Date();
@@ -156,7 +261,7 @@
       div.className = "card" + (o.label===currentLabel?" active":"") + (o.label===def?" is-default":"");
       div.dataset.label = o.label;
       div.innerHTML = '<div class="yr">'+parts[0]+'</div><div class="mo">'+parts[1]+'</div>'+
-        '<div class="qtag">'+(QUARTER_LABELS.has(o.label)?"季/年結":"")+'</div>';
+        '<div class="qtag">'+(QUARTER_LABELS.has(o.label)?L().qtag:"")+'</div>';
       div.addEventListener("click",()=>{currentLabel=o.label;renderCards();renderDetail();});
       box.appendChild(div);
     });
@@ -165,9 +270,10 @@
   function renderDetail(){
     const mo = MONTHS.find(o=>o.label===currentLabel);
     if(!mo) return;
-    document.getElementById("detailTitle").textContent = mo.label + " 決算時程";
+    const t18 = L();
+    document.getElementById("detailTitle").textContent = mo.label + t18.detailSuffix;
     document.getElementById("detailSub").textContent =
-      "共 "+mo.tasks.length+" 項作業" + (QUARTER_LABELS.has(mo.label)?"（季結/年結月，含盤點）":"");
+      t18.subCount(mo.tasks.length) + (QUARTER_LABELS.has(mo.label)?t18.subQuarter:"");
 
     const tasks = mo.tasks.slice().sort((a,b)=> (a.sort<b.sort?-1:a.sort>b.sort?1:0));
 
@@ -175,29 +281,30 @@
     const ab = document.getElementById("alertBox");
     if(weekendDeadlines.length){
       ab.className="alert";
-      ab.innerHTML = "<b>⚠ 本月有 "+weekendDeadlines.length+" 項日期落在週末：</b> " +
-        weekendDeadlines.map(t=>t.name+"（"+t.md+" "+t.w+"）").join("、") + "，建議確認是否需提前。";
+      const list = weekendDeadlines.map(t=>trName(t.name)+"（"+t.md+" "+trWk(t.w)+"）").join(t18.alertJoin);
+      ab.innerHTML = t18.alertWeekend(weekendDeadlines.length, list);
     } else {
       ab.className="alert none";
-      ab.innerHTML = "本月各項日期皆為平日，無週末截止情形。";
+      ab.innerHTML = t18.alertNone;
     }
 
     const tb = document.getElementById("tbody");
     tb.innerHTML = "";
     tasks.forEach(t=>{
       const tr = document.createElement("tr");
+      const nm = trName(t.name), ct = trCat(t.cat), rl = trRule(t.rule), wk = trWk(t.w);
       let dateCell, wkCell;
       if(t.iso){
         dateCell = '<span class="date">'+t.md+'</span>';
-        wkCell = '<span class="wk'+(t.we?' weekend':'')+'">'+t.w+'</span>'+(t.we?'<span class="warn">假日</span>':'');
+        wkCell = '<span class="wk'+(t.we?' weekend':'')+'">'+wk+'</span>'+(t.we?'<span class="warn">'+t18.holiday+'</span>':'');
       } else {
-        dateCell = '<span class="date">'+t.text+'</span>';
+        dateCell = '<span class="date">'+trText(t.text)+'</span>';
         wkCell = '<span class="wk">—</span>';
       }
       tr.innerHTML = '<td>'+dateCell+'</td><td>'+wkCell+'</td>'+
-        '<td>'+t.name+'</td>'+
-        '<td><span class="tag" style="background:'+CAT_COLOR[t.cat]+'">'+t.cat+'</span></td>'+
-        '<td class="rule">'+(t.rule||'—')+'</td>';
+        '<td>'+nm+'</td>'+
+        '<td><span class="tag" style="background:'+CAT_COLOR[t.cat]+'">'+ct+'</span></td>'+
+        '<td class="rule">'+(rl||t18.dash)+'</td>';
       tb.appendChild(tr);
     });
 
@@ -206,17 +313,41 @@
 
   function renderLegend(){
     const lg = document.getElementById("legend");
-    lg.innerHTML = "<span>分類：</span>" +
-      Object.keys(CAT_COLOR).map(k=>'<span class="tag" style="background:'+CAT_COLOR[k]+'">'+k+'</span>').join("");
+    lg.innerHTML = "<span>"+L().legendLabel+"</span>" +
+      Object.keys(CAT_COLOR).map(k=>'<span class="tag" style="background:'+CAT_COLOR[k]+'">'+trCat(k)+'</span>').join("");
+  }
+
+  function applyStaticI18n(){
+    const t18 = L();
+    document.getElementById("h1title").textContent = t18.title;
+    document.getElementById("metaLine").textContent = t18.meta;
+    document.getElementById("pillYm").textContent = t18.pillYm;
+    document.getElementById("pillDefault").textContent = t18.pillDefault;
+    document.getElementById("pickerH2").textContent = t18.pickerH2;
+    document.getElementById("footerNote").textContent = t18.footer;
+    document.title = t18.title;
+    const ths = document.querySelectorAll("thead th");
+    t18.th.forEach((v,i)=>{ if(ths[i]) ths[i].textContent = v; });
+    const now = new Date();
+    document.getElementById("todayPill").textContent =
+      t18.today+" "+now.getFullYear()+"/"+(now.getMonth()+1)+"/"+now.getDate();
+  }
+
+  function setLang(lang){
+    LANG = lang;
+    document.querySelectorAll(".langbtn").forEach(b=>
+      b.classList.toggle("active", b.dataset.lang===lang));
+    document.documentElement.lang = (lang==="ja") ? "ja" : "zh-Hant";
+    applyStaticI18n();
+    renderCards();
+    renderDetail();
   }
 
   document.addEventListener("DOMContentLoaded",()=>{
-    const now = new Date();
-    document.getElementById("todayPill").textContent =
-      "今日 "+now.getFullYear()+"/"+(now.getMonth()+1)+"/"+now.getDate();
+    document.querySelectorAll(".langbtn").forEach(b=>
+      b.addEventListener("click",()=>setLang(b.dataset.lang)));
     currentLabel = computeDefaultLabel();
-    renderCards();
-    renderDetail();
+    setLang(LANG);
   });
 </script>
 </body>
