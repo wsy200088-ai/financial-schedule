@@ -290,22 +290,37 @@
 
     const tb = document.getElementById("tbody");
     tb.innerHTML = "";
+    // 依日期分組：同一天的多筆作業共用一格日期／星期（rowspan 垂直合併）
+    const groups = [];
     tasks.forEach(t=>{
-      const tr = document.createElement("tr");
-      const nm = trName(t.name), ct = trCat(t.cat), rl = trRule(t.rule), wk = trWk(t.w);
-      let dateCell, wkCell;
-      if(t.iso){
-        dateCell = '<span class="date">'+t.md+'</span>';
-        wkCell = '<span class="wk'+(t.we?' weekend':'')+'">'+wk+'</span>'+(t.we?'<span class="warn">'+t18.holiday+'</span>':'');
-      } else {
-        dateCell = '<span class="date">'+trText(t.text)+'</span>';
-        wkCell = '<span class="wk">—</span>';
-      }
-      tr.innerHTML = '<td>'+dateCell+'</td><td>'+wkCell+'</td>'+
-        '<td>'+nm+'</td>'+
-        '<td><span class="tag" style="background:'+CAT_COLOR[t.cat]+'">'+ct+'</span></td>'+
-        '<td class="rule">'+(rl||t18.dash)+'</td>';
-      tb.appendChild(tr);
+      const key = t.iso ? t.iso : ("t:"+t.text);
+      const last = groups[groups.length-1];
+      if(last && last.key===key){ last.items.push(t); }
+      else groups.push({key:key, items:[t]});
+    });
+    groups.forEach(g=>{
+      g.items.forEach((t,idx)=>{
+        const tr = document.createElement("tr");
+        const nm = trName(t.name), ct = trCat(t.cat), rl = trRule(t.rule), wk = trWk(t.w);
+        let cells = "";
+        if(idx===0){
+          let dateCell, wkCell;
+          if(t.iso){
+            dateCell = '<span class="date">'+t.md+'</span>';
+            wkCell = '<span class="wk'+(t.we?' weekend':'')+'">'+wk+'</span>'+(t.we?'<span class="warn">'+t18.holiday+'</span>':'');
+          } else {
+            dateCell = '<span class="date">'+trText(t.text)+'</span>';
+            wkCell = '<span class="wk">—</span>';
+          }
+          const rs = g.items.length>1 ? ' rowspan="'+g.items.length+'"' : '';
+          cells = '<td'+rs+'>'+dateCell+'</td><td'+rs+'>'+wkCell+'</td>';
+        }
+        cells += '<td>'+nm+'</td>'+
+          '<td><span class="tag" style="background:'+CAT_COLOR[t.cat]+'">'+ct+'</span></td>'+
+          '<td class="rule">'+(rl||t18.dash)+'</td>';
+        tr.innerHTML = cells;
+        tb.appendChild(tr);
+      });
     });
 
     renderLegend();
