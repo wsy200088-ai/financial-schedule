@@ -86,15 +86,13 @@
     line-height:1.2;margin-top:1px;white-space:normal;}
   /* 公司行事曆 */
   .cintro{background:var(--cream);border:1.4px solid var(--line);border-radius:12px;
-    padding:12px 16px;margin-bottom:18px;font-size:.86rem;color:#5b5148;line-height:1.7;}
-  .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px;}
-  .cmonth{border:1.4px solid var(--line);border-radius:14px;overflow:hidden;background:var(--white);}
-  .cmonthh{margin:0;padding:9px 14px;font-size:.98rem;font-weight:800;color:#4a4038;
-    background:linear-gradient(135deg,var(--mint),var(--lilac));}
-  .ctable{width:100%;border-collapse:collapse;font-size:.82rem;}
-  .ctable th{background:var(--cream);color:#6b6157;font-weight:700;text-align:left;
-    padding:5px 10px;border-bottom:1.4px solid var(--line);font-size:.74rem;}
-  .ctable td{padding:5px 10px;border-bottom:1px solid #f0ece5;vertical-align:top;}
+    padding:12px 16px;margin-bottom:16px;font-size:.86rem;color:#5b5148;line-height:1.7;}
+  .cards.c12{grid-template-columns:repeat(12,1fr);}
+  .ctablewrap{border:1.4px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px;}
+  .ctable{width:100%;border-collapse:collapse;font-size:.9rem;}
+  .ctable th{background:var(--cream);color:var(--ink);font-weight:700;text-align:left;
+    padding:6px 12px;border-bottom:2px solid var(--peach);font-size:.82rem;white-space:nowrap;}
+  .ctable td{padding:6px 12px;border-bottom:1px solid #f0ece5;vertical-align:top;}
   .ctable tr:last-child td{border-bottom:none;}
   .ctable .cdate{font-weight:700;color:#5b5148;white-space:nowrap;}
   .ctable tr.holrow{background:#fff4f4;}
@@ -200,7 +198,12 @@
   <section class="detail company" id="companyView" style="display:none">
     <div class="head"><h2 id="companyTitle"></h2></div>
     <div class="cintro" id="companyIntro"></div>
-    <div class="cgrid" id="companyBody"></div>
+    <section class="picker" style="box-shadow:none;padding:0;margin-bottom:14px;">
+      <h2 id="companyPickerH2">選擇月份</h2>
+      <div class="cards c12" id="companyCards"></div>
+    </section>
+    <div class="head"><h2 id="companyDetailTitle"></h2><span class="sub" id="companyDetailSub"></span></div>
+    <div class="ctablewrap"><div id="companyDetailBody"></div></div>
     <div class="legend" id="companyLegend"></div>
     <div class="callink" id="companyCal"></div>
   </section>
@@ -258,6 +261,8 @@
       modeCompany:"公司行事曆",
       companyTitle:"2027 公司行事曆",
       companyIntro:"來源：倍樂生行事曆（2027）｜ 已排除「經營會議」。涵蓋財務決算（月結／季結／差異報告／盤點）、人事收付款（薪資／廠商支付／費用截止／出勤截止／倉移／裁切／獎金）與國定假日（<span style=\"color:#c0392b;font-weight:700\">紅字</span>）。",
+      companyPickerH2:"選擇月份",
+      companyDetailSuffix:" 公司行事曆",
       companyTh:["日期","星期","項目","分類"],
       revTitle:"FY26 期中修正預算時程",
       revRange:"修正範圍：4-8月實績、9-3月預算修正",
@@ -295,6 +300,8 @@
       modeCompany:"会社カレンダー",
       companyTitle:"2027 会社カレンダー",
       companyIntro:"出典：ベネッセ行事暦（2027）｜「経営会議」は除外。決算（月次締め／四半期締め／差異報告／棚卸）、人事・出納（給与／取引先支払／経費締切／勤怠締切／倉庫移動／裁断／賞与）、国定祝日（<span style=\"color:#c0392b;font-weight:700\">赤字</span>）を含みます。",
+      companyPickerH2:"月を選択",
+      companyDetailSuffix:" 会社カレンダー",
       companyTh:["日付","曜日","項目","分類"],
       revTitle:"FY26 期中修正予算スケジュール",
       revRange:"修正範囲：4-8月実績、9-3月予算修正",
@@ -591,51 +598,69 @@
     document.getElementById("revBodyB").innerHTML=hB;
   }
 
+  let currentCompanyLabel = "2027/1月";
+
   function renderCompany(){
     const t18 = L();
     document.getElementById("companyTitle").textContent = t18.companyTitle;
     document.getElementById("companyIntro").innerHTML = t18.companyIntro;
+    document.getElementById("companyPickerH2").textContent = t18.companyPickerH2;
     document.getElementById("companyCal").innerHTML = t18.calLink;
     // 圖例（獨立於決算時程）
     document.getElementById("companyLegend").innerHTML =
       "<span>"+t18.legendLabel+"</span>" +
       Object.keys(CCAT).map(k=>'<span class="tag" style="background:'+CCAT[k]+'">'+trCat(k)+'</span>').join("");
-    const box = document.getElementById("companyBody");
+    renderCompanyCards();
+    renderCompanyDetail();
+  }
+
+  function renderCompanyCards(){
+    const box = document.getElementById("companyCards");
     box.innerHTML = "";
     COMPANY.forEach(mo=>{
-      const sec = document.createElement("section");
-      sec.className = "cmonth";
-      let h = '<h3 class="cmonthh">'+mo.ym+'</h3>'+
-        '<table class="ctable"><thead><tr>'+
-        '<th style="width:56px">'+t18.companyTh[0]+'</th>'+
-        '<th style="width:44px">'+t18.companyTh[1]+'</th>'+
-        '<th>'+t18.companyTh[2]+'</th>'+
-        '<th style="width:92px">'+t18.companyTh[3]+'</th></tr></thead><tbody>';
-      // 依日期分組（同日多項以 rowspan 合併日期／星期）
-      const groups = [];
-      mo.ev.forEach(e=>{
-        const last = groups[groups.length-1];
-        if(last && last.md===e.md){ last.items.push(e); }
-        else groups.push({md:e.md, w:e.w, we:e.we, items:[e]});
-      });
-      groups.forEach(g=>{
-        g.items.forEach((e,idx)=>{
-          const nm = (LANG==="ja") ? e.nmj : e.nm;
-          const rowCls = e.hol ? ' class="holrow"' : '';
-          h += '<tr'+rowCls+'>';
-          if(idx===0){
-            const rs = g.items.length>1 ? ' rowspan="'+g.items.length+'"' : '';
-            h += '<td class="cdate"'+rs+'>'+g.md+'</td>'+
-                 '<td'+rs+'><span class="wk'+(g.we?' weekend':'')+'">'+trWk(g.w)+'</span></td>';
-          }
-          h += '<td>'+(e.hol?'<span class="holname2">'+nm+'</span>':nm)+'</td>'+
-               '<td><span class="tag" style="background:'+(CCAT[e.cat]||'#eee')+'">'+trCat(e.cat)+'</span></td></tr>';
-        });
-      });
-      h += '</tbody></table>';
-      sec.innerHTML = h;
-      box.appendChild(sec);
+      const parts = mo.ym.split("/");
+      const div = document.createElement("div");
+      div.className = "card" + (mo.ym===currentCompanyLabel?" active":"");
+      div.dataset.label = mo.ym;
+      div.innerHTML = '<div class="yr">'+parts[0]+'</div><div class="mo">'+parts[1]+'</div>'+
+        '<div class="qtag"></div>';
+      div.addEventListener("click",()=>{currentCompanyLabel=mo.ym;renderCompanyCards();renderCompanyDetail();});
+      box.appendChild(div);
     });
+  }
+
+  function renderCompanyDetail(){
+    const t18 = L();
+    const mo = COMPANY.find(m=>m.ym===currentCompanyLabel) || COMPANY[0];
+    document.getElementById("companyDetailTitle").textContent = mo.ym + t18.companyDetailSuffix;
+    document.getElementById("companyDetailSub").textContent = t18.subCount(mo.ev.length);
+    let h = '<table class="ctable"><thead><tr>'+
+      '<th style="width:78px">'+t18.companyTh[0]+'</th>'+
+      '<th style="width:70px">'+t18.companyTh[1]+'</th>'+
+      '<th>'+t18.companyTh[2]+'</th>'+
+      '<th style="width:120px">'+t18.companyTh[3]+'</th></tr></thead><tbody>';
+    // 依日期分組（同日多項以 rowspan 合併日期／星期）
+    const groups = [];
+    mo.ev.forEach(e=>{
+      const last = groups[groups.length-1];
+      if(last && last.md===e.md){ last.items.push(e); }
+      else groups.push({md:e.md, w:e.w, we:e.we, items:[e]});
+    });
+    groups.forEach(g=>{
+      g.items.forEach((e,idx)=>{
+        const nm = (LANG==="ja") ? e.nmj : e.nm;
+        h += '<tr'+(e.hol?' class="holrow"':'')+'>';
+        if(idx===0){
+          const rs = g.items.length>1 ? ' rowspan="'+g.items.length+'"' : '';
+          h += '<td class="cdate"'+rs+'>'+g.md+'</td>'+
+               '<td'+rs+'><span class="wk'+(g.we?' weekend':'')+'">'+trWk(g.w)+'</span></td>';
+        }
+        h += '<td>'+(e.hol?'<span class="holname2">'+nm+'</span>':nm)+'</td>'+
+             '<td><span class="tag" style="background:'+(CCAT[e.cat]||'#eee')+'">'+trCat(e.cat)+'</span></td></tr>';
+      });
+    });
+    h += '</tbody></table>';
+    document.getElementById("companyDetailBody").innerHTML = h;
   }
 
   function setMode(mode){
