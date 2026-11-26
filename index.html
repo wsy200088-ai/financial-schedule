@@ -130,7 +130,8 @@
   .legend .tag{font-size:.66rem;}
   footer.note{margin-top:10px;font-size:.68rem;color:var(--ink-soft);line-height:1.55;}
 
-  .modesw{display:flex;gap:8px;margin-bottom:11px;}
+  .modesw{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:11px;align-items:center;}
+  .modebtn-cal{margin-left:auto;}
   .modebtn{cursor:pointer;background:var(--white);border:1.6px solid var(--line);
     border-radius:10px;padding:8px 18px;font-size:.9rem;font-weight:700;
     color:var(--ink-soft);user-select:none;transition:.15s;}
@@ -150,6 +151,14 @@
   .revstar{color:#3f9c93;font-weight:700;}
   .revtime{white-space:nowrap;font-variant-numeric:tabular-nums;}
 
+  @media(max-width:640px){
+    .modesw{gap:6px;}
+    .modebtn{padding:7px 12px;font-size:.82rem;}
+    .modebtn-cal{margin-left:0;}
+    header.top{padding:10px 14px;}
+    header.top h1{font-size:1.05rem;}
+    .pills{margin-left:0;width:100%;}
+  }
   @media print{body{background:#fff;}.card:not(.active){display:none;}
     .picker,.modesw{display:none;}section.detail,header.top{box-shadow:none;}}
   /* FY26期末 / FY27期初 預算時程 */
@@ -184,11 +193,11 @@
   </header>
 
   <div class="modesw" id="modesw">
-    <span class="modebtn active" data-mode="settle" id="modeSettleBtn">決算時程</span>
-    <span class="modebtn" data-mode="revision" id="modeRevisionBtn">期中修正時程</span>
-    <span class="modebtn" data-mode="company" id="modeCompanyBtn">公司行事曆</span>
+    <span class="modebtn active" data-mode="settle" id="modeSettleBtn">FY26決算時程</span>
+    <span class="modebtn" data-mode="revision" id="modeRevisionBtn">FY26期中</span>
     <span class="modebtn" data-mode="budgetend" id="modeBudgetEndBtn">FY26期末</span>
     <span class="modebtn" data-mode="budgetbegin" id="modeBudgetBeginBtn">FY27期初</span>
+    <span class="modebtn modebtn-cal" data-mode="company" id="modeCompanyBtn">公司行事曆</span>
   </div>
 
   <div id="settleView">
@@ -306,8 +315,8 @@
   let LANG = "zh";
   const I18N = {
     zh:{
-      title:"FY26 財務決算時程表",
-      meta:"各部門決算作業預定時程 ｜ 來源：決算時程_各部.xlsx",
+      title:"FY26 財務時程表",
+      meta:"月次決算 ｜ 預算（期中／期末／期初）｜ 公司行事曆・整合檢視",
       pillYm:"年月＝決算年月",
       pillDefault:"◆ 預設月",
       today:"今日",
@@ -328,8 +337,8 @@
       holidayNote:(list)=>"<b>🎌 本作業月國定假日：</b> "+list+"，請留意工作日調整。",
       alertJoin:"、",
       calLink:'📅 參考：<a href="https://www.dgpa.gov.tw/information?uid=30&pid=12982" target="_blank" rel="noopener">中華民國116年（2027）政府行政機關辦公日曆表</a>',
-      modeSettle:"決算時程",
-      modeRevision:"期中修正時程",
+      modeSettle:"FY26決算時程",
+      modeRevision:"FY26期中",
       modeCompany:"公司行事曆",
       companyTitle:"公司行事曆",
       companyIntro:"來源：倍樂生行事曆（2026／2027）｜ 涵蓋 2026/4月～2027/12月，已排除「經營會議」與「一般付款日」。分類：財務決算（月結／季結／差異報告／盤點）、人事收付款（薪資／廠商支付／費用截止／出勤截止／倉移／裁切／獎金）、國定假日（<span style=\"color:#c0392b;font-weight:700\">紅字</span>）。",
@@ -354,8 +363,8 @@
       budgetMeetingTh:["日期","星期","時間","報告部門","報告者"]
     },
     ja:{
-      title:"FY26 財務決算スケジュール表",
-      meta:"各部門決算作業予定スケジュール ｜ 出典：決算スケジュール_各部.xlsx",
+      title:"FY26 財務スケジュール表",
+      meta:"月次決算 ｜ 予算（期中／期末／期初）｜ 会社カレンダー・統合ビュー",
       pillYm:"年月＝決算対象年月",
       pillDefault:"◆ 既定月",
       today:"本日",
@@ -376,8 +385,8 @@
       holidayNote:(list)=>"<b>🎌 当作業月の国定祝日：</b> "+list+"、営業日の調整にご留意ください。",
       alertJoin:"、",
       calLink:'📅 参考：<a href="https://www.dgpa.gov.tw/information?uid=30&pid=12982" target="_blank" rel="noopener">中華民国116年（2027年）政府行政機関 業務日カレンダー</a>',
-      modeSettle:"決算スケジュール",
-      modeRevision:"期中修正スケジュール",
+      modeSettle:"FY26決算スケジュール",
+      modeRevision:"FY26期中",
       modeCompany:"会社カレンダー",
       companyTitle:"会社カレンダー",
       companyIntro:"出典：ベネッセ行事暦（2026／2027）｜ 2026/4月～2027/12月、「経営会議」と「一般支払日」は除外。分類：決算（月次締め／四半期締め／差異報告／棚卸）、人事・出納（給与／取引先支払／経費締切／勤怠締切／倉庫移動／裁断／賞与）、国定祝日（<span style=\"color:#c0392b;font-weight:700\">赤字</span>）。",
@@ -865,6 +874,9 @@
     MODE = mode;
     document.querySelectorAll(".modebtn").forEach(b=>
       b.classList.toggle("active", b.dataset.mode===mode));
+    const _settleOnly = (mode==="settle");
+    document.getElementById("pillYm").style.display = _settleOnly ? "" : "none";
+    document.getElementById("pillDefault").style.display = _settleOnly ? "" : "none";
     document.getElementById("settleView").style.display = (mode==="settle")?"":"none";
     document.getElementById("revisionView").style.display = (mode==="revision")?"":"none";
     document.getElementById("companyView").style.display = (mode==="company")?"":"none";
